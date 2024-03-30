@@ -3,13 +3,13 @@ use std::{
     fs::File,
     io::{self, Read, Write},
     mem::size_of,
-    os::fd::{FromRawFd, RawFd},
+    os::fd::{FromRawFd, IntoRawFd, OwnedFd},
     process::exit,
 };
 
 struct Pipe {
-    read: RawFd,
-    write: RawFd,
+    read: OwnedFd,
+    write: OwnedFd,
 }
 
 impl Pipe {
@@ -23,21 +23,11 @@ impl Pipe {
         }
     }
 
-    fn read(self) -> RawFd {
-        if let Err(err) = unistd::close(self.write) {
-            eprintln!("Failed to close write end of pipe: {err}");
-            exit(1);
-        }
-
+    fn read(self) -> OwnedFd {
         self.read
     }
 
-    fn write(self) -> RawFd {
-        if let Err(err) = unistd::close(self.read) {
-            eprintln!("Failed to close read end of pipe: {err}");
-            exit(1);
-        }
-
+    fn write(self) -> OwnedFd {
         self.write
     }
 }
@@ -48,9 +38,9 @@ pub struct Parent {
 }
 
 impl Parent {
-    fn from_raw_fd(fd: RawFd) -> Self {
+    fn from_fd(fd: OwnedFd) -> Self {
         Self {
-            pipe: Some(unsafe { File::from_raw_fd(fd) }),
+            pipe: Some(unsafe { File::from_raw_fd(fd.into_raw_fd()) }),
         }
     }
 
@@ -63,9 +53,8 @@ impl Parent {
     }
 
     pub fn write(&mut self, message: &str) -> Result<(), io::Error> {
-        let mut pipe = match self.pipe.take() {
-            Some(pipe) => pipe,
-            None => return Ok(()),
+        let Some(mut pipe) = self.pipe.take() else {
+            return Ok(());
         };
 
         let len = message.len().to_ne_bytes();
@@ -85,9 +74,9 @@ struct Child {
 }
 
 impl Child {
-    fn from_raw_fd(fd: RawFd) -> Self {
+    fn from_fd(fd: OwnedFd) -> Self {
         Self {
-            pipe: unsafe { File::from_raw_fd(fd) },
+            pipe: unsafe { File::from_raw_fd(fd.into_raw_fd()) },
         }
     }
 
@@ -128,7 +117,7 @@ impl Child {
 }
 
 fn parent(pipe: Pipe) -> ! {
-    Child::from_raw_fd(pipe.read()).wait();
+    Child::from_fd(pipe.read()).wait();
 }
 
 fn child(pipe: Pipe) -> Parent {
@@ -141,7 +130,7 @@ fn child(pipe: Pipe) -> Parent {
 
     match unsafe { unistd::fork() } {
         Ok(ForkResult::Parent { .. }) => exit(0),
-        Ok(ForkResult::Child) => Parent::from_raw_fd(pipe),
+        Ok(ForkResult::Child) => Parent::from_fd(pipe),
         Err(err) => {
             eprintln!("Failed to fork off for the second time: {err}");
             exit(1);

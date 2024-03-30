@@ -147,7 +147,7 @@ impl<'a> Daemon<'a> {
             pidfile::create(pidfile)?;
         }
 
-        if let Some(ref user) = self.user {
+        if let Some(user) = &self.user {
             user::drop_privileges(user, self.group.as_ref())?;
         }
 
