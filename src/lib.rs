@@ -164,18 +164,9 @@ impl<'a> Daemon<'a> {
 
         close(io::stdin().as_raw_fd())
             .map_err(|err| format!("Failed to close stdin: {err}"))?;
-        fs::redirect(io::stdout(), self.stdout).map_err(|err| {
-            format!(
-                "Failed to redirect stdout to '{}': {err}",
-                self.stdout.display()
-            )
-        })?;
-        fs::redirect(io::stderr(), self.stderr).map_err(|err| {
-            format!(
-                "Failed to redirect stderr to '{}': {err}",
-                self.stderr.display()
-            )
-        })?;
+
+        fs::redirect_stdout(self.stdout)?;
+        fs::redirect_stderr(self.stderr)?;
 
         Ok(())
     }
