@@ -48,8 +48,8 @@ impl<'a> Daemon<'a> {
         self
     }
 
-    pub fn group(mut self, group: &Option<Group>) -> Self {
-        self.group = group.clone();
+    pub fn group(mut self, group: Option<Group>) -> Self {
+        self.group = group;
         self
     }
 
@@ -104,8 +104,8 @@ impl<'a> Daemon<'a> {
         self
     }
 
-    pub fn user(mut self, user: &Option<User>) -> Self {
-        self.user = user.clone();
+    pub fn user(mut self, user: Option<User>) -> Self {
+        self.user = user;
         self
     }
 
