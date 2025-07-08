@@ -1,7 +1,39 @@
-use crate::{Group, User};
+use nix::unistd::{self, Gid, Uid};
+use std::{
+    env,
+    ffi::CString,
+    fmt::{self, Display, Formatter},
+};
 
-use nix::unistd;
-use std::{env, ffi::CString};
+#[derive(Clone, Debug)]
+pub enum User {
+    Id(Uid),
+    Name(String),
+}
+
+impl Display for User {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Id(uid) => write!(f, "user with ID ({uid})"),
+            Self::Name(name) => write!(f, "user '{name}'"),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Group {
+    Id(Gid),
+    Name(String),
+}
+
+impl Display for Group {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Id(gid) => write!(f, "group with ID ({gid})"),
+            Self::Name(name) => write!(f, "group '{name}'"),
+        }
+    }
+}
 
 pub fn drop_privileges(
     user: &User,

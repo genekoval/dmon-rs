@@ -4,42 +4,13 @@ mod pidfile;
 mod user;
 
 pub use fork::Parent;
+pub use user::{Group, User};
 
 use nix::{
     sys::stat::{self, Mode},
     unistd::{Gid, Uid},
 };
-use std::{env, fmt::Display, path::Path, process::exit};
-
-#[derive(Clone, Debug)]
-pub enum User {
-    Id(Uid),
-    Name(String),
-}
-
-impl Display for User {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Id(uid) => write!(f, "user with ID ({uid})"),
-            Self::Name(name) => write!(f, "user '{name}'"),
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum Group {
-    Id(Gid),
-    Name(String),
-}
-
-impl Display for Group {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Id(gid) => write!(f, "group with ID ({gid})"),
-            Self::Name(name) => write!(f, "group '{name}'"),
-        }
-    }
-}
+use std::{env, path::Path, process::exit};
 
 #[derive(Debug)]
 pub struct Daemon<'a> {
