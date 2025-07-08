@@ -1,5 +1,5 @@
 use nix::{
-    fcntl::{open, OFlag},
+    fcntl::{OFlag, open},
     sys::stat::Mode,
     unistd::{dup2_stderr, dup2_stdout},
 };

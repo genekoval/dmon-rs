@@ -1,4 +1,4 @@
-use nix::unistd::{self, setsid, ForkResult};
+use nix::unistd::{self, ForkResult, setsid};
 use std::{
     fs::File,
     io::{self, Read, Write},

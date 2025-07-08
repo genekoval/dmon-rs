@@ -55,7 +55,7 @@ fn find_user(user: &User) -> Result<unistd::User, String> {
 }
 
 fn set_env(user: &unistd::User) {
-    env::set_var("USER", &user.name);
-    env::set_var("HOME", &user.dir);
-    env::set_var("SHELL", &user.shell);
+    unsafe { env::set_var("USER", &user.name) };
+    unsafe { env::set_var("HOME", &user.dir) };
+    unsafe { env::set_var("SHELL", &user.shell) };
 }

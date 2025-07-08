@@ -7,7 +7,7 @@ pub use fork::Parent;
 
 use nix::{
     sys::stat::{self, Mode},
-    unistd::{close, Gid, Uid},
+    unistd::{Gid, Uid, close},
 };
 use std::{env, fmt::Display, io, os::fd::AsRawFd, path::Path, process::exit};
 
