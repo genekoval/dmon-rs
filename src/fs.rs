@@ -5,26 +5,12 @@ use nix::{
 };
 use std::{os::fd::OwnedFd, path::Path};
 
-pub fn null() -> &'static Path {
-    Path::new("/dev/null")
-}
-
 pub fn root() -> &'static Path {
     Path::new("/")
 }
 
-pub fn open_file(file: &Path) -> Result<OwnedFd, String> {
-    open(
-        file,
-        OFlag::O_RDWR | OFlag::O_CREAT | OFlag::O_EXCL,
-        Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP,
-    )
-    .map_err(|err| {
-        format!(
-            "failed to open file for redirection '{}': {err}",
-            file.display()
-        )
-    })
+pub fn null() -> &'static Path {
+    Path::new("/dev/null")
 }
 
 pub fn redirect_stdin() -> Result<(), String> {
@@ -49,5 +35,19 @@ pub fn redirect_stderr(file: &Path) -> Result<(), String> {
 
     dup2_stderr(fd).map_err(|err| {
         format!("failed to redirect stderr to '{}': {err}", file.display())
+    })
+}
+
+fn open_file(file: &Path) -> Result<OwnedFd, String> {
+    open(
+        file,
+        OFlag::O_RDWR | OFlag::O_CREAT | OFlag::O_EXCL,
+        Mode::S_IRUSR | Mode::S_IWUSR | Mode::S_IRGRP | Mode::S_IWGRP,
+    )
+    .map_err(|err| {
+        format!(
+            "failed to open file for redirection '{}': {err}",
+            file.display()
+        )
     })
 }
