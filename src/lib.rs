@@ -7,9 +7,9 @@ pub use fork::Parent;
 
 use nix::{
     sys::stat::{self, Mode},
-    unistd::{Gid, Uid, close},
+    unistd::{Gid, Uid},
 };
-use std::{env, fmt::Display, io, os::fd::AsRawFd, path::Path, process::exit};
+use std::{env, fmt::Display, path::Path, process::exit};
 
 #[derive(Clone, Debug)]
 pub enum User {
@@ -162,9 +162,7 @@ impl<'a> Daemon<'a> {
 
         stat::umask(self.umask);
 
-        close(io::stdin().as_raw_fd())
-            .map_err(|err| format!("Failed to close stdin: {err}"))?;
-
+        fs::redirect_stdin()?;
         fs::redirect_stdout(self.stdout)?;
         fs::redirect_stderr(self.stderr)?;
 

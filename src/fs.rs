@@ -1,7 +1,7 @@
 use nix::{
     fcntl::{OFlag, open},
     sys::stat::Mode,
-    unistd::{dup2_stderr, dup2_stdout},
+    unistd::{dup2_stderr, dup2_stdin, dup2_stdout},
 };
 use std::{os::fd::OwnedFd, path::Path};
 
@@ -24,6 +24,15 @@ pub fn open_file(file: &Path) -> Result<OwnedFd, String> {
             "failed to open file for redirection '{}': {err}",
             file.display()
         )
+    })
+}
+
+pub fn redirect_stdin() -> Result<(), String> {
+    let file = null();
+    let fd = open_file(file)?;
+
+    dup2_stdin(fd).map_err(|err| {
+        format!("failed to redirect stdin to '{}': {err}", file.display())
     })
 }
 
