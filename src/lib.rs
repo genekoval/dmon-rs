@@ -6,7 +6,7 @@ mod user;
 
 pub use daemon::Daemon;
 pub use fork::Parent;
-pub use user::{Group, User};
+pub use user::{Group, Privileges, User};
 
 pub fn options() -> Daemon {
     Daemon::new()

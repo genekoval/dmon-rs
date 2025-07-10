@@ -1,13 +1,10 @@
 use crate::{
     fork::{self, Parent},
     fs, pidfile,
-    user::{self, Group, User},
+    user::Privileges,
 };
 
-use nix::{
-    sys::stat::{self, Mode},
-    unistd::{Gid, Uid},
-};
+use nix::sys::stat::{self, Mode};
 use std::{
     env,
     path::{Path, PathBuf},
@@ -16,8 +13,7 @@ use std::{
 
 #[derive(Debug)]
 pub struct Daemon {
-    user: Option<User>,
-    group: Option<Group>,
+    user: Option<Privileges>,
     stdout: PathBuf,
     stderr: PathBuf,
     pidfile: Option<PathBuf>,
@@ -29,7 +25,6 @@ impl Default for Daemon {
     fn default() -> Self {
         Self {
             user: None,
-            group: None,
             stdout: "/dev/null".into(),
             stderr: "/dev/null".into(),
             pidfile: None,
@@ -44,39 +39,17 @@ impl Daemon {
         Default::default()
     }
 
+    pub fn user<T: Into<Privileges>>(mut self, user: Option<T>) -> Self {
+        self.user = user.map(|user| user.into());
+        self
+    }
+
     pub fn chdir<P: AsRef<Path>>(mut self, workdir: Option<P>) -> Self {
         self.workdir = workdir
             .as_ref()
             .map(|path| path.as_ref())
             .unwrap_or(Path::new("/"))
             .to_path_buf();
-
-        self
-    }
-
-    pub fn group(mut self, group: Option<Group>) -> Self {
-        self.group = group;
-        self
-    }
-
-    pub fn permissions(mut self, perms: Option<&str>) -> Self {
-        if let Some(perms) = perms {
-            let mut perms = perms.trim().split(':');
-
-            let user = perms.next().unwrap();
-
-            self.user = match user.parse::<u32>().ok() {
-                Some(uid) => Some(User::Id(Uid::from_raw(uid))),
-                None => Some(User::Name(user.into())),
-            };
-
-            if let Some(group) = perms.next() {
-                self.group = match group.parse::<u32>().ok() {
-                    Some(gid) => Some(Group::Id(Gid::from_raw(gid))),
-                    None => Some(Group::Name(group.into())),
-                };
-            }
-        }
 
         self
     }
@@ -114,11 +87,6 @@ impl Daemon {
         self
     }
 
-    pub fn user(mut self, user: Option<User>) -> Self {
-        self.user = user;
-        self
-    }
-
     fn prepare(self) -> Result<(), String> {
         // Pidfiles should be owned by the root user.
         // Write the pidfile before dropping privileges.
@@ -126,8 +94,8 @@ impl Daemon {
             pidfile::create(&pidfile)?;
         }
 
-        if let Some(user) = &self.user {
-            user::drop_privileges(user, self.group.as_ref())?;
+        if let Some(user) = self.user {
+            user.drop_privileges()?;
         }
 
         // Change the working directory after dropping privileges to ensure
@@ -158,5 +126,19 @@ impl Daemon {
         }
 
         parent
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn user() {
+        let daemon = Daemon::new().user(Some("root"));
+        let (user, group) = daemon.user.unwrap().get().unwrap();
+
+        assert_eq!(0, user.uid.as_raw());
+        assert_eq!(0, group.gid.as_raw());
     }
 }
