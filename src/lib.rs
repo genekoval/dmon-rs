@@ -4,7 +4,7 @@ mod fs;
 mod pidfile;
 mod user;
 
-pub use daemon::Daemon;
+pub use daemon::{DEFAULT_UMASK, Daemon};
 pub use fork::Parent;
 pub use user::{Group, Privileges, User};
 

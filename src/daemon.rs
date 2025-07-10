@@ -11,6 +11,8 @@ use std::{
     process::exit,
 };
 
+pub const DEFAULT_UMASK: Mode = Mode::from_bits(0o0027).unwrap();
+
 #[derive(Debug)]
 pub struct Daemon {
     user: Option<Privileges>,
@@ -28,7 +30,7 @@ impl Default for Daemon {
             stdout: "/dev/null".into(),
             stderr: "/dev/null".into(),
             pidfile: None,
-            umask: Mode::from_bits(0o0027).unwrap(),
+            umask: DEFAULT_UMASK,
             workdir: "/".into(),
         }
     }
@@ -76,10 +78,7 @@ impl Daemon {
     }
 
     pub fn umask(mut self, mode: Option<Mode>) -> Self {
-        if let Some(mode) = mode {
-            self.umask = mode;
-        }
-
+        self.umask = mode.unwrap_or(DEFAULT_UMASK);
         self
     }
 
