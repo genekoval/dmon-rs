@@ -134,7 +134,7 @@ impl Daemon {
         // the daemon user has access to it.
         env::set_current_dir(&self.workdir).map_err(|err| {
             format!(
-                "Failed to change working directory to '{}': {err}",
+                "failed to change working directory to '{}': {err}",
                 self.workdir.display()
             )
         })?;

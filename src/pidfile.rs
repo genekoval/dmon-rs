@@ -8,17 +8,17 @@ pub fn create(path: &Path) -> Result<(), String> {
         .create_new(true)
         .open(path)
         .map_err(|err| {
-            format!("Failed to create PID file '{}': {err}", path.display())
+            format!("failed to create PID file '{}': {err}", path.display())
         })?;
 
     writeln!(file, "{}", process::id()).map_err(|err| {
-        format!("Failed to write PID to file '{}': {err}", path.display())
+        format!("failed to write PID to file '{}': {err}", path.display())
     })?;
 
     file.metadata()
         .map_err(|err| {
             format!(
-                "Failed to fetch PID file metadata '{}': {err}",
+                "failed to fetch PID file metadata '{}': {err}",
                 path.display()
             )
         })?
@@ -27,7 +27,7 @@ pub fn create(path: &Path) -> Result<(), String> {
 
     file.sync_all().map_err(|err| {
         format!(
-            "Failed to sync PID file '{}' data to disk: {err}",
+            "failed to sync PID file '{}' data to disk: {err}",
             path.display()
         )
     })?;

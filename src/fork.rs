@@ -17,7 +17,7 @@ impl Pipe {
         match unistd::pipe() {
             Ok((read, write)) => Self { read, write },
             Err(err) => {
-                eprintln!("Failed to create interprocess channel: {err}");
+                eprintln!("failed to create interprocess channel: {err}");
                 exit(1);
             }
         }
@@ -84,7 +84,7 @@ impl Child {
         let mut buffer = [0; size_of::<usize>()];
         if let Err(err) = self.pipe.read_exact(&mut buffer) {
             if err.kind() != io::ErrorKind::UnexpectedEof {
-                eprintln!("Failed to read data from daemon process: {err}");
+                eprintln!("failed to read data from daemon process: {err}");
             }
 
             exit(1);
@@ -99,14 +99,14 @@ impl Child {
         let len = match self.pipe.read_to_string(&mut message) {
             Ok(len) => len,
             Err(err) => {
-                eprintln!("Failed to read message from daemon process: {err}");
+                eprintln!("failed to read message from daemon process: {err}");
                 exit(1);
             }
         };
 
         if len != expected {
             eprintln!(
-                "Expected {expected} bytes from daemon process, received {len}"
+                "expected {expected} bytes from daemon process, received {len}"
             );
             exit(1);
         }
@@ -124,7 +124,7 @@ fn child(pipe: Pipe) -> Parent {
     let pipe = pipe.write();
 
     if setsid().is_err() {
-        eprintln!("Already process group leader");
+        eprintln!("already process group leader");
         exit(1);
     }
 
@@ -132,7 +132,7 @@ fn child(pipe: Pipe) -> Parent {
         Ok(ForkResult::Parent { .. }) => exit(0),
         Ok(ForkResult::Child) => Parent::from_fd(pipe),
         Err(err) => {
-            eprintln!("Failed to fork off for the second time: {err}");
+            eprintln!("failed to fork off for the second time: {err}");
             exit(1);
         }
     }
@@ -146,7 +146,7 @@ pub fn fork() -> Parent {
         Ok(ForkResult::Parent { .. }) => parent(pipe),
         Ok(ForkResult::Child) => child(pipe),
         Err(err) => {
-            eprintln!("Failed to fork off for the first time: {err}");
+            eprintln!("failed to fork off for the first time: {err}");
             exit(1);
         }
     }

@@ -46,21 +46,21 @@ pub fn drop_privileges(
     };
 
     let name = CString::new(user.name.as_str())
-        .expect("User names can only contain valid ASCII characters");
+        .expect("user names can only contain valid ASCII characters");
 
     unistd::initgroups(&name, group.gid).map_err(|err| {
         format!(
-            "Failed to set supplementary group list for user '{}': {err}",
+            "failed to set supplementary group list for user '{}': {err}",
             user.name
         )
     })?;
 
     unistd::setgid(group.gid).map_err(|err| {
-        format!("Failed to set group to '{}': {err}", group.name)
+        format!("failed to set group to '{}': {err}", group.name)
     })?;
 
     unistd::setuid(user.uid).map_err(|err| {
-        format!("Failed to set user to '{}': {err}", user.name)
+        format!("failed to set user to '{}': {err}", user.name)
     })?;
 
     set_env(&user);
