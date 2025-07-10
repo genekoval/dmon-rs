@@ -3,7 +3,7 @@ use std::{
     fs::File,
     io::{self, Read, Write},
     mem::size_of,
-    os::fd::{FromRawFd, IntoRawFd, OwnedFd},
+    os::fd::OwnedFd,
     process::exit,
 };
 
@@ -40,7 +40,7 @@ pub struct Parent {
 impl Parent {
     fn from_fd(fd: OwnedFd) -> Self {
         Self {
-            pipe: Some(unsafe { File::from_raw_fd(fd.into_raw_fd()) }),
+            pipe: Some(fd.into()),
         }
     }
 
@@ -75,9 +75,7 @@ struct Child {
 
 impl Child {
     fn from_fd(fd: OwnedFd) -> Self {
-        Self {
-            pipe: unsafe { File::from_raw_fd(fd.into_raw_fd()) },
-        }
+        Self { pipe: fd.into() }
     }
 
     fn wait(mut self) -> ! {
