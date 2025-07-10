@@ -8,6 +8,6 @@ pub use daemon::Daemon;
 pub use fork::Parent;
 pub use user::{Group, User};
 
-pub fn options() -> Daemon<'static> {
+pub fn options() -> Daemon {
     Daemon::new()
 }

@@ -8,42 +8,48 @@ use nix::{
     sys::stat::{self, Mode},
     unistd::{Gid, Uid},
 };
-use std::{env, path::Path, process::exit};
+use std::{
+    env,
+    path::{Path, PathBuf},
+    process::exit,
+};
 
 #[derive(Debug)]
-pub struct Daemon<'a> {
+pub struct Daemon {
     user: Option<User>,
     group: Option<Group>,
-    stdout: &'a Path,
-    stderr: &'a Path,
-    pidfile: Option<&'a Path>,
+    stdout: PathBuf,
+    stderr: PathBuf,
+    pidfile: Option<PathBuf>,
     umask: Mode,
-    workdir: &'a Path,
+    workdir: PathBuf,
 }
 
-impl<'a> Default for Daemon<'a> {
+impl Default for Daemon {
     fn default() -> Self {
         Self {
             user: None,
             group: None,
-            stdout: fs::null(),
-            stderr: fs::null(),
+            stdout: "/dev/null".into(),
+            stderr: "/dev/null".into(),
             pidfile: None,
             umask: Mode::from_bits(0o0027).unwrap(),
-            workdir: fs::root(),
+            workdir: "/".into(),
         }
     }
 }
 
-impl<'a> Daemon<'a> {
+impl Daemon {
     pub fn new() -> Self {
         Default::default()
     }
 
-    pub fn chdir(mut self, workdir: Option<&'a Path>) -> Self {
-        if let Some(workdir) = workdir {
-            self.workdir = workdir;
-        }
+    pub fn chdir<P: AsRef<Path>>(mut self, workdir: Option<P>) -> Self {
+        self.workdir = workdir
+            .as_ref()
+            .map(|path| path.as_ref())
+            .unwrap_or(Path::new("/"))
+            .to_path_buf();
 
         self
     }
@@ -75,23 +81,27 @@ impl<'a> Daemon<'a> {
         self
     }
 
-    pub fn pidfile(mut self, pidfile: Option<&'a Path>) -> Self {
-        self.pidfile = pidfile;
+    pub fn pidfile<P: AsRef<Path>>(mut self, path: Option<P>) -> Self {
+        self.pidfile = path.map(|path| path.as_ref().to_path_buf());
         self
     }
 
-    pub fn stderr(mut self, path: Option<&'a Path>) -> Self {
-        if let Some(path) = path {
-            self.stderr = path;
-        }
+    pub fn stderr<P: AsRef<Path>>(mut self, path: Option<P>) -> Self {
+        self.stderr = path
+            .as_ref()
+            .map(|path| path.as_ref())
+            .unwrap_or(Path::new("/dev/null"))
+            .to_path_buf();
 
         self
     }
 
-    pub fn stdout(mut self, path: Option<&'a Path>) -> Self {
-        if let Some(path) = path {
-            self.stdout = path;
-        }
+    pub fn stdout<P: AsRef<Path>>(mut self, path: Option<P>) -> Self {
+        self.stdout = path
+            .as_ref()
+            .map(|path| path.as_ref())
+            .unwrap_or(Path::new("/dev/null"))
+            .to_path_buf();
 
         self
     }
@@ -113,7 +123,7 @@ impl<'a> Daemon<'a> {
         // Pidfiles should be owned by the root user.
         // Write the pidfile before dropping privileges.
         if let Some(pidfile) = self.pidfile {
-            pidfile::create(pidfile)?;
+            pidfile::create(&pidfile)?;
         }
 
         if let Some(user) = &self.user {
@@ -122,7 +132,7 @@ impl<'a> Daemon<'a> {
 
         // Change the working directory after dropping privileges to ensure
         // the daemon user has access to it.
-        env::set_current_dir(self.workdir).map_err(|err| {
+        env::set_current_dir(&self.workdir).map_err(|err| {
             format!(
                 "Failed to change working directory to '{}': {err}",
                 self.workdir.display()
@@ -132,8 +142,8 @@ impl<'a> Daemon<'a> {
         stat::umask(self.umask);
 
         fs::redirect_stdin()?;
-        fs::redirect_stdout(self.stdout)?;
-        fs::redirect_stderr(self.stderr)?;
+        fs::redirect_stdout(&self.stdout)?;
+        fs::redirect_stderr(&self.stderr)?;
 
         Ok(())
     }

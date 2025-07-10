@@ -5,16 +5,8 @@ use nix::{
 };
 use std::{os::fd::OwnedFd, path::Path};
 
-pub fn root() -> &'static Path {
-    Path::new("/")
-}
-
-pub fn null() -> &'static Path {
-    Path::new("/dev/null")
-}
-
 pub fn redirect_stdin() -> Result<(), String> {
-    let file = null();
+    let file = Path::new("/dev/null");
     let fd = open_file(file)?;
 
     dup2_stdin(fd).map_err(|err| {
