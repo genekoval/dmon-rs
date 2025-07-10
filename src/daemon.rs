@@ -61,20 +61,16 @@ impl Daemon {
 
     pub fn stderr<P: AsRef<Path>>(mut self, path: Option<P>) -> Self {
         self.stderr = path
-            .as_ref()
-            .map(|path| path.as_ref())
-            .unwrap_or(Path::new("/dev/null"))
-            .to_path_buf();
+            .map(|path| path.as_ref().to_path_buf())
+            .unwrap_or_else(|| PathBuf::from("/dev/null"));
 
         self
     }
 
     pub fn stdout<P: AsRef<Path>>(mut self, path: Option<P>) -> Self {
         self.stdout = path
-            .as_ref()
-            .map(|path| path.as_ref())
-            .unwrap_or(Path::new("/dev/null"))
-            .to_path_buf();
+            .map(|path| path.as_ref().to_path_buf())
+            .unwrap_or_else(|| PathBuf::from("/dev/null"));
 
         self
     }
