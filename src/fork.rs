@@ -44,15 +44,11 @@ impl Parent {
         }
     }
 
-    pub fn notify(&mut self) -> Result<(), io::Error> {
-        self.write("")
-    }
-
     pub fn is_waiting(&self) -> bool {
         self.pipe.is_some()
     }
 
-    pub fn write(&mut self, message: &str) -> Result<(), io::Error> {
+    pub fn notify(&mut self, message: &str) -> Result<(), io::Error> {
         let Some(mut pipe) = self.pipe.take() else {
             return Ok(());
         };
@@ -66,6 +62,10 @@ impl Parent {
         }
 
         Ok(())
+    }
+
+    pub fn success(&mut self) -> Result<(), io::Error> {
+        self.notify("")
     }
 }
 
