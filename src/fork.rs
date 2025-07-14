@@ -2,10 +2,11 @@ use nix::unistd::{self, ForkResult, setsid};
 use std::{
     fs::File,
     io::{self, Read, Write},
-    mem::size_of,
     os::fd::OwnedFd,
     process::exit,
 };
+
+const SUCCESS: &str = "OK";
 
 struct Pipe {
     read: OwnedFd,
@@ -33,89 +34,65 @@ impl Pipe {
 }
 
 #[derive(Default)]
-pub struct Parent {
-    pipe: Option<File>,
-}
+pub struct Parent(Option<File>);
 
 impl Parent {
-    fn from_fd(fd: OwnedFd) -> Self {
-        Self {
-            pipe: Some(fd.into()),
-        }
+    fn new(fd: OwnedFd) -> Self {
+        Self(Some(fd.into()))
     }
 
     pub fn is_waiting(&self) -> bool {
-        self.pipe.is_some()
+        self.0.is_some()
     }
 
-    pub fn notify(&mut self, message: &str) -> Result<(), io::Error> {
-        let Some(mut pipe) = self.pipe.take() else {
+    pub fn notify(&mut self, message: &str) -> io::Result<()> {
+        let Some(mut pipe) = self.0.take() else {
             return Ok(());
         };
 
-        let len = message.len().to_ne_bytes();
-
-        pipe.write_all(&len)?;
-
-        if !message.is_empty() {
-            write!(pipe, "{message}")?;
-        }
+        pipe.write_all(message.as_bytes())?;
 
         Ok(())
     }
 
-    pub fn success(&mut self) -> Result<(), io::Error> {
-        self.notify("")
+    pub fn success(&mut self) -> io::Result<()> {
+        self.notify(SUCCESS)
     }
 }
 
-struct Child {
-    pipe: File,
-}
+struct Child(File);
 
 impl Child {
-    fn from_fd(fd: OwnedFd) -> Self {
-        Self { pipe: fd.into() }
+    fn read(mut self) -> String {
+        let mut message = String::new();
+
+        if let Err(err) = self.0.read_to_string(&mut message) {
+            eprintln!("failed to read message from daemon process: {err}");
+            exit(1);
+        }
+
+        message
     }
 
-    fn wait(mut self) -> ! {
-        let mut buffer = [0; size_of::<usize>()];
-        if let Err(err) = self.pipe.read_exact(&mut buffer) {
-            if err.kind() != io::ErrorKind::UnexpectedEof {
-                eprintln!("failed to read data from daemon process: {err}");
-            }
-
-            exit(1);
+    fn wait(self) -> ! {
+        match self.read().as_str() {
+            SUCCESS => exit(0),
+            "" => eprintln!("daemon failed to start"),
+            message => eprintln!("daemon failed to start: {message}"),
         }
 
-        let expected = match usize::from_ne_bytes(buffer) {
-            0 => exit(0),
-            len => len,
-        };
-
-        let mut message = String::new();
-        let len = match self.pipe.read_to_string(&mut message) {
-            Ok(len) => len,
-            Err(err) => {
-                eprintln!("failed to read message from daemon process: {err}");
-                exit(1);
-            }
-        };
-
-        if len != expected {
-            eprintln!(
-                "expected {expected} bytes from daemon process, received {len}"
-            );
-            exit(1);
-        }
-
-        eprintln!("{message}");
         exit(1);
     }
 }
 
+impl From<OwnedFd> for Child {
+    fn from(fd: OwnedFd) -> Self {
+        Self(fd.into())
+    }
+}
+
 fn parent(pipe: Pipe) -> ! {
-    Child::from_fd(pipe.read()).wait();
+    Child::from(pipe.read()).wait();
 }
 
 fn child(pipe: Pipe) -> Parent {
@@ -128,7 +105,7 @@ fn child(pipe: Pipe) -> Parent {
 
     match unsafe { unistd::fork() } {
         Ok(ForkResult::Parent { .. }) => exit(0),
-        Ok(ForkResult::Child) => Parent::from_fd(pipe),
+        Ok(ForkResult::Child) => Parent::new(pipe),
         Err(err) => {
             eprintln!("failed to fork off for the second time: {err}");
             exit(1);
