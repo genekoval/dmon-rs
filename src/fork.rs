@@ -34,6 +34,7 @@ impl Pipe {
 }
 
 #[derive(Default)]
+#[must_use = "dropping `Parent` without calling `success` indicates failure"]
 pub struct Parent(Option<File>);
 
 impl Parent {
@@ -113,7 +114,6 @@ fn child(pipe: Pipe) -> Parent {
     }
 }
 
-#[must_use]
 pub fn fork() -> Parent {
     let pipe = Pipe::new();
 

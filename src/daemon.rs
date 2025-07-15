@@ -111,7 +111,6 @@ impl Daemon {
         Ok(())
     }
 
-    #[must_use]
     pub fn daemonize(self) -> Parent {
         let parent = fork::fork();
 
