@@ -33,7 +33,7 @@ impl Pipe {
     }
 }
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 #[must_use = "dropping `Parent` without calling `success` indicates failure"]
 pub struct Parent(Option<File>);
 
