@@ -99,7 +99,7 @@ fn main() -> ExitCode {
         dmon::options()
             .user(user)
             .pidfile(pidfile)
-            .change_dir(Some(work_dir))
+            .working_directory(Some(work_dir))
             .stdout(Some("daemon.out"))
             .stderr(Some("daemon.err"))
             .daemonize()

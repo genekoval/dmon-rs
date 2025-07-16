@@ -46,7 +46,10 @@ impl Daemon {
         self
     }
 
-    pub fn change_dir<P: AsRef<Path>>(mut self, workdir: Option<P>) -> Self {
+    pub fn working_directory<P: AsRef<Path>>(
+        mut self,
+        workdir: Option<P>,
+    ) -> Self {
         self.workdir = workdir
             .as_ref()
             .map(|path| path.as_ref())
