@@ -3,6 +3,7 @@ name = "dmon"
 version = "0.1.1"
 description = "A library for building daemon processes."
 edition = "2024"
+license = "MIT"
 
 [dependencies]
 nix = { version = "0.30", features = ["fs", "process", "user"] }
