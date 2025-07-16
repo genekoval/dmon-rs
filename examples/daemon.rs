@@ -1,8 +1,10 @@
 use clap::Parser;
-use dmon::Privileges;
-use nix::{
-    sys::stat::Mode,
-    unistd::{chown, mkfifo},
+use dmon::{
+    Privileges,
+    nix::{
+        sys::stat::Mode,
+        unistd::{chown, mkfifo},
+    },
 };
 use std::{
     env,
