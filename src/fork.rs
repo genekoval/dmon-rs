@@ -33,6 +33,60 @@ impl Pipe {
     }
 }
 
+/// The write end of a pipe to the original parent process.
+///
+/// The daemon can send at most one message to the parent, after which the pipe
+/// will be closed and the parent process terminated. Sending nothing and
+/// dropping the `Parent` object will result in an EOF on the parent's end,
+/// which is equivalent to sending an empty error message. If the daemon
+/// encounters a fatal error during setup, it can send a custom error message
+/// to the parent with [`Parent::notify`]. This message will be printed to the
+/// parent process's stderr. If setup succeeds, [`Parent::success`] should be
+/// called, which sends a very specific message to the parent. The message is
+/// akin to a simple "ok", so there is very little chance of an error being
+/// misunderstood as success. Upon receiving a success message, the parent
+/// process exits with code zero without printing anything.
+///
+/// Objects created by [`Parent::default`] do not contain any pipe handles. They
+/// can be used to simplify code for programs that can be run as a daemon or in
+/// the foreground.
+///
+/// # Examples
+///
+/// ```no_run
+/// use dmon::Parent;
+/// use std::process::ExitCode;
+///
+/// fn main() -> ExitCode {
+///     let daemon = true;
+///
+///     let mut parent = if daemon {
+///         dmon::options().daemonize()
+///     } else {
+///         Default::default()
+///     };
+///
+///     match run_server(&mut parent) {
+///         Ok(()) => ExitCode::SUCCESS,
+///         Err(err) => {
+///             eprintln!("{err}");
+///             parent.notify(&err).unwrap();
+///             ExitCode::FAILURE
+///         }
+///     }
+/// }
+///
+/// fn run_server(parent: &mut Parent) -> Result<(), String> {
+///     // Listen on a port or socket...
+///     // Returning an Err here will write the error to the parent process.
+///
+///     parent.success().unwrap();
+///
+///     // Run the server...
+///
+///     Ok(())
+/// }
+/// ````
 #[derive(Debug, Default)]
 #[must_use = "dropping `Parent` without calling `success` indicates failure"]
 pub struct Parent(Option<File>);
@@ -42,10 +96,20 @@ impl Parent {
         Self(Some(fd.into()))
     }
 
+    /// Returns true if the parent process is waiting for a message.
     pub fn is_waiting(&self) -> bool {
         self.0.is_some()
     }
 
+    /// Writes the specified message to the parent process and closes the pipe.
+    ///
+    /// This method should be called if the daemon encounters a fatal error
+    /// during setup. The message will be displayed to the user, and the
+    /// parent process will exit with a non-zero code.
+    ///
+    /// It is safe to call this method after the pipe is closed or when there
+    /// is no parent process at all. Such calls are no-ops and immediately
+    /// returns [`Ok`].
     pub fn notify(&mut self, message: &str) -> io::Result<()> {
         let Some(mut pipe) = self.0.take() else {
             return Ok(());
@@ -56,6 +120,16 @@ impl Parent {
         Ok(())
     }
 
+    /// Tells the parent process that the daemon started successfully and closes
+    /// the pipe.
+    ///
+    /// This method should be called as soon as the daemon is considered up and
+    /// running. Upon receiving a success message, the parent process will exit
+    /// with code zero without printing anything to the user.
+    ///
+    /// It is safe to call this method after the pipe is closed or when there
+    /// is no parent process at all. Such calls are no-ops and immediately
+    /// returns [`Ok`].
     pub fn success(&mut self) -> io::Result<()> {
         self.notify(SUCCESS)
     }
