@@ -1,3 +1,5 @@
+//! Types for working with users and groups.
+
 use nix::{
     libc::{gid_t, uid_t},
     unistd::{self, Gid, Uid},
@@ -21,7 +23,7 @@ impl User {
     /// # Examples
     ///
     /// ```
-    /// use dmon::User;
+    /// use dmon::user::User;
     ///
     /// let user = User::Uid(0.into()).get().unwrap();
     /// assert_eq!(user.name, "root");
@@ -66,7 +68,7 @@ impl Display for User {
     /// # Examples
     ///
     /// ```
-    /// use dmon::User;
+    /// use dmon::user::User;
     ///
     /// let user: User = 0.into();
     /// assert_eq!(user.to_string(), "user with ID (0)");
@@ -91,7 +93,7 @@ impl From<&str> for User {
     /// # Examples
     ///
     /// ```
-    /// use dmon::User;
+    /// use dmon::user::User;
     ///
     /// let user = User::from("0");
     /// assert_eq!(user.uid().as_raw(), 0);
@@ -132,7 +134,7 @@ impl Group {
     /// # Examples
     ///
     /// ```
-    /// use dmon::Group;
+    /// use dmon::user::Group;
     ///
     /// let group = Group::Gid(0.into()).get().unwrap();
     /// assert_eq!(group.name, "root");
@@ -177,7 +179,7 @@ impl Display for Group {
     /// # Examples
     ///
     /// ```
-    /// use dmon::Group;
+    /// use dmon::user::Group;
     ///
     /// let group: Group = 0.into();
     /// assert_eq!(group.to_string(), "group with ID (0)");
@@ -202,7 +204,7 @@ impl From<&str> for Group {
     /// # Examples
     ///
     /// ```
-    /// use dmon::Group;
+    /// use dmon::user::Group;
     ///
     /// let group = Group::from("0");
     /// assert_eq!(group.gid().as_raw(), 0);
@@ -245,7 +247,7 @@ impl Privileges {
     /// # Examples
     ///
     /// ```
-    /// use dmon::Privileges;
+    /// use dmon::user::Privileges;
     ///
     /// let (user, group) = Privileges::from("root").get().unwrap();
     /// assert_eq!(user.uid.as_raw(), 0);
@@ -303,7 +305,7 @@ impl From<&str> for Privileges {
     /// # Examples
     ///
     /// ```
-    /// use dmon::Privileges;
+    /// use dmon::user::Privileges;
     ///
     /// let privileges = Privileges::from("1000");
     /// assert_eq!(privileges.user.uid().as_raw(), 1000);
