@@ -32,7 +32,7 @@ struct Cli {
 
     /// Daemon process owner and optional group
     #[arg(short, long, value_name = "OWNER:[GROUP]", requires = "daemon")]
-    user: Option<String>,
+    user: Option<Privileges>,
 
     /// Daemon working directory
     #[arg(
@@ -86,18 +86,17 @@ impl From<dmon::Parent> for Parent {
 fn main() -> ExitCode {
     let cli = Cli::parse();
 
-    let user = cli.user.as_deref().map(Privileges::from);
     let work_dir = cli.workdir.as_path();
     let pidfile = cli.pidfile.as_deref();
 
     let mut parent: Parent = if cli.daemon {
-        if let Err(err) = create_dir(work_dir, user.as_ref()) {
+        if let Err(err) = create_dir(work_dir, cli.user.as_ref()) {
             eprintln!("{err}");
             return ExitCode::FAILURE;
         }
 
         dmon::options()
-            .user(user)
+            .user(cli.user)
             .pidfile(pidfile)
             .working_directory(Some(work_dir))
             .stdout(Some("daemon.out"))

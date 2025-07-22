@@ -8,12 +8,13 @@ of daemons, such as dropping privileges and redirecting standard streams.
 ## Example
 
 ```rust
+use dmon::user::Privileges
 use std::path::PathBuf;
 
 #[derive(Default)]
 struct Config {
     daemon: bool,
-    user: Option<String>,
+    user: Option<Privileges>,
     pidfile: Option<PathBuf>,
 }
 
@@ -29,8 +30,8 @@ fn main() {
 
     let mut parent = if config.daemon {
         dmon::options()
-            .user(config.user.as_deref())
-            .pidfile(config.pidfile.as_deref())
+            .user(config.user)
+            .pidfile(config.pidfile)
             .working_directory(Some(
                 format!("/var/lib/{}", env!("CARGO_PKG_NAME"))
             ))
@@ -49,4 +50,3 @@ fn main() {
     parent.success().unwrap();
 }
 ```
-
