@@ -6,7 +6,7 @@
 //! use dmon::nix::sys::stat::Mode;
 //!
 //! dmon::options()
-//!     .user(Some("mydaemon"))
+//!     .user(Some("mydaemon".parse().unwrap()))
 //!     .working_directory(Some("/var/lib/mydaemon"))
 //!     .pidfile(Some("/run/mydaemon.pid"))
 //!     .stdout(Some("mydaemon.out"))
@@ -38,7 +38,6 @@ pub use nix;
 ///
 /// ```no_run
 /// let mut parent = dmon::options()
-///                   .user(Some("daemon"))
 ///                   .working_directory(Some("/tmp/mydaemon"))
 ///                   .daemonize();
 /// ```

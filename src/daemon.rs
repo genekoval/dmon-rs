@@ -40,20 +40,20 @@ pub const DEFAULT_UMASK: Mode = Mode::from_bits(0o0027).unwrap();
 /// # Examples
 ///
 /// ```no_run
-/// use dmon::Daemon;
+/// use dmon::{user::Privileges, Daemon};
 ///
 /// struct Config {
-///     user: Option<String>,
+///     user: Option<Privileges>,
 /// }
 ///
 /// let config = Config {
-///     user: Some("daemon".into()),
+///     user: Some("daemon".parse().unwrap()),
 /// };
 ///
 /// let mut parent = Daemon::new()
 ///                   .pidfile(Some("/run/mydaemon.pid"))
 ///                   .working_directory(Some("/var/lib/mydaemon"))
-///                   .user(config.user.as_deref())
+///                   .user(config.user)
 ///                   .stdout(Some("mydaemon.out"))
 ///                   .stderr(Some("mydaemon.err"))
 ///                   .daemonize();
@@ -99,8 +99,8 @@ impl Daemon {
     ///
     /// By default, no value is present and the daemon will run with the same
     /// privileges as the original process.
-    pub fn user<T: Into<Privileges>>(mut self, user: Option<T>) -> Self {
-        self.user = user.map(|user| user.into());
+    pub fn user(mut self, user: Option<Privileges>) -> Self {
+        self.user = user;
         self
     }
 
@@ -188,6 +188,7 @@ impl Daemon {
 
         if let Some(user) = self.user {
             user.drop_privileges()?;
+            unsafe { user.set_env() };
         }
 
         // Change the working directory after dropping privileges to ensure
@@ -231,7 +232,7 @@ impl Daemon {
     ///
     /// # Safety
     ///
-    /// This function is unsafe to call from a multithreaded environment.
+    /// This function is unsafe to call from a multi-threaded environment.
     pub fn daemonize(self) -> Parent {
         let parent = fork::fork();
 
@@ -241,19 +242,5 @@ impl Daemon {
         }
 
         parent
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn user() {
-        let daemon = Daemon::new().user(Some("root"));
-        let (user, group) = daemon.user.unwrap().get().unwrap();
-
-        assert_eq!(0, user.uid.as_raw());
-        assert_eq!(0, group.gid.as_raw());
     }
 }

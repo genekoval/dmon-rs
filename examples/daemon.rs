@@ -31,7 +31,7 @@ struct Cli {
     daemon: bool,
 
     /// Daemon process owner and optional group
-    #[arg(short, long, value_name = "OWNER:[GROUP]", requires = "daemon")]
+    #[arg(short, long, value_name = "OWNER[:[GROUP]]", requires = "daemon")]
     user: Option<Privileges>,
 
     /// Daemon working directory
@@ -171,11 +171,15 @@ fn run_server(parent: &mut Parent) -> Result<(), String> {
     Ok(())
 }
 
-fn create_dir(path: &Path, user: Option<&Privileges>) -> Result<(), String> {
+fn create_dir(
+    path: &Path,
+    privileges: Option<&Privileges>,
+) -> Result<(), String> {
     match fs::create_dir(path) {
         Ok(()) => {
-            if let Some(user) = user {
-                let (user, group) = user.get()?;
+            if let Some(privileges) = privileges {
+                let user = &privileges.user.0;
+                let group = &privileges.group.0;
 
                 chown(path, Some(user.uid), Some(group.gid)).map_err(|err| {
                     format!(
