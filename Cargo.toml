@@ -1,6 +1,6 @@
 [package]
 name = "dmon"
-version = "0.1.1"
+version = "0.2.0"
 edition = "2024"
 description = "A library for building daemon processes."
 repository = "https://github.com/genekoval/dmon-rs"
