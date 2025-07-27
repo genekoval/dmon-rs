@@ -4,7 +4,12 @@ use nix::{
     libc::{gid_t, uid_t},
     unistd::{self, Gid, Uid},
 };
-use std::{env, ffi::CString, str::FromStr};
+use std::{
+    env,
+    ffi::CString,
+    fmt::{self, Display},
+    str::FromStr,
+};
 
 /// A value representing a user.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,6 +65,22 @@ impl User {
         unsafe { env::set_var("USER", &self.0.name) };
         unsafe { env::set_var("HOME", &self.0.dir) };
         unsafe { env::set_var("SHELL", &self.0.shell) };
+    }
+}
+
+impl Display for User {
+    /// Writes the user name to the given formatter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dmon::user::User;
+    ///
+    /// let user = User::from_uid(0.into()).unwrap();
+    /// assert_eq!(user.to_string(), "root");
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0.name)
     }
 }
 
@@ -129,6 +150,22 @@ impl Group {
             .ok_or_else(|| format!("group '{name}' does not exist"))?;
 
         Ok(Self(group))
+    }
+}
+
+impl Display for Group {
+    /// Writes the group name to the given formatter.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dmon::user::Group;
+    ///
+    /// let group = Group::from_gid(0.into()).unwrap();
+    /// assert_eq!(group.to_string(), "root");
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0.name)
     }
 }
 
@@ -207,6 +244,48 @@ impl Privileges {
     /// [`std::env::set_var`] for more information.
     pub unsafe fn set_env(&self) {
         unsafe { self.user.set_env() };
+    }
+}
+
+impl Display for Privileges {
+    /// Writes the user and group names to the given formatter.
+    ///
+    /// If the user and group names are the same, only the name is written.
+    /// Otherwise, both names separated by a colon are written.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use dmon::user::{Group, Privileges, User};
+    ///
+    /// let privileges = Privileges {
+    ///     user: User::from_name("root").unwrap(),
+    ///     group: Group::from_name("root").unwrap(),
+    /// };
+    ///
+    /// assert_eq!(privileges.to_string(), "root");
+    /// ```
+    ///
+    /// ```
+    /// use dmon::user::{Group, Privileges, User};
+    ///
+    /// let privileges = Privileges {
+    ///     user: User::from_name("root").unwrap(),
+    ///     group: Group::from_name("users").unwrap(),
+    /// };
+    ///
+    /// assert_eq!(privileges.to_string(), "root:users");
+    /// ```
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let user = self.user.0.name.as_str();
+        let group = self.group.0.name.as_str();
+
+        if user == group {
+            f.write_str(user)
+        } else {
+            let s = format!("{user}:{group}");
+            f.write_str(&s)
+        }
     }
 }
 

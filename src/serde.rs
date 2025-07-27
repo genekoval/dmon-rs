@@ -64,8 +64,8 @@ impl Serialize for Privileges {
         if user == group {
             serializer.serialize_str(user)
         } else {
-            let string = format!("{user}:{group}");
-            serializer.serialize_str(&string)
+            let s = format!("{user}:{group}");
+            serializer.serialize_str(&s)
         }
     }
 }
@@ -91,12 +91,22 @@ mod tests {
     }
 
     #[test]
-    fn privileges() {
+    fn privileges_same_names() {
         let privileges = Privileges {
-            user: User::from_uid(0.into()).unwrap(),
-            group: Group::from_gid(0.into()).unwrap(),
+            user: User::from_name("root").unwrap(),
+            group: Group::from_name("root").unwrap(),
         };
 
         assert_tokens(&privileges, &[Token::String("root")]);
+    }
+
+    #[test]
+    fn privileges_different_names() {
+        let privileges = Privileges {
+            user: User::from_name("root").unwrap(),
+            group: Group::from_name("users").unwrap(),
+        };
+
+        assert_tokens(&privileges, &[Token::String("root:users")]);
     }
 }
