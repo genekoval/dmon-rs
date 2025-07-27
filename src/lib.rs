@@ -24,6 +24,9 @@ mod fork;
 mod fs;
 mod pidfile;
 
+#[cfg(feature = "serde")]
+mod serde;
+
 pub use daemon::{DEFAULT_UMASK, Daemon};
 pub use fork::Parent;
 

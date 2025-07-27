@@ -7,7 +7,7 @@ use nix::{
 use std::{env, ffi::CString, str::FromStr};
 
 /// A value representing a user.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct User(pub unistd::User);
 
 impl User {
@@ -91,7 +91,7 @@ impl FromStr for User {
 }
 
 /// A value representing a group.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Group(pub unistd::Group);
 
 impl Group {
@@ -160,7 +160,7 @@ impl FromStr for Group {
 }
 
 /// A user and group.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Privileges {
     pub user: User,
     pub group: Group,
