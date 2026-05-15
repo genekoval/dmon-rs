@@ -9,7 +9,7 @@ keywords = ["daemon", "daemonize", "fork", "service", "unix"]
 categories = ["os::unix-apis"]
 
 [dependencies]
-nix = { version = "0.30", features = ["fs", "process", "user"] }
+nix = { version = "0.31", features = ["fs", "process", "user"] }
 serde = { version = "1", optional = true }
 
 [dev-dependencies]
